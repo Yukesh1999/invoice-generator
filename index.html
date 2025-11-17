@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Invoice / Delivery Challan - SHRI BALAJI ENGINEERING WORKS</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: Arial, sans-serif; background:#f0f0f0; padding:20px; display:flex; justify-content:center; align-items:flex-start; min-height:100vh; }
+        .invoice-container { width:210mm; min-height:297mm; background:#fff; padding:10mm; box-shadow:0 0 10px rgba(0,0,0,0.1); position:relative; }
+        .invoice-box { border:3px solid #000; padding:8px; min-height:calc(297mm - 20mm); display:flex; flex-direction:column; }
+        
+        /* Mobile responsive styles */
+        @media screen and (max-width: 768px) {
+            body { 
+                padding:2px; 
+                background:#fff;
+                overflow-x: hidden;
+            }
+            .invoice-container { 
+                width:100%; 
+                min-height:auto;
+                height:auto;
+                padding:3mm; 
+                box-shadow:none; 
+                max-width:100vw;
+                page-break-inside: avoid;
+            }
+            .invoice-box { 
+                border:1px solid #000; 
+                padding:3px; 
+                min-height:auto;
+                height:auto;
+            }
+        }
+
+        /* ---------- HEADER (INCREASED FONT SIZE ABOVE TABLE) ---------- */
+        .header { border-bottom:2px solid #000; padding-bottom:6px; margin-bottom:0; }
+        .logo-line { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px; }
+        .logo { border:2px solid #000; border-radius:20px; padding:6px 14px; font-weight:bold; font-size:20px; }
+        .invoice-title-section { flex:1; text-align:center; }
+        .invoice-title { font-weight:bold; font-size:18px; text-decoration:underline; }
+        .party-note { font-size:12px; text-align:center; margin-top:4px; }
+        .company-name { font-weight:bold; font-size:24px; text-align:center; margin:6px 0; letter-spacing:1px; }
+        .company-address { text-align:center; font-size:12px; margin-bottom:8px; }
+        
+        /* Mobile header adjustments */
+        @media screen and (max-width: 768px) {
+            .logo { font-size:14px; padding:4px 10px; }
+            .invoice-title { font-size:13px; }
+            .party-note { font-size:9px; }
+            .company-name { font-size:16px; }
+            .company-address { font-size:9px; }
+        }
+
+        /* Reference bar - CENTERED S/C No. */
+        .reference-bar { display:flex; border-top:1px solid #000; border-bottom:2px solid #000; margin-bottom:0; position:relative; }
+        .ref-left { padding:8px; font-size:14px; border-right:2px solid #000; width:30%; display:flex; align-items:center; }
+        .ref-left input { width:80px; display:inline-block; border-bottom:1px solid #000; text-align:center; font-size:14px; }
+
+        .ref-right { padding:8px; font-size:14px; flex:1; display:flex; margin-left: 57px; align-items:center; position:relative; }
+        .ref-number { font-weight:bold; font-size:16px; border:2px solid #000; display:inline-block; padding:6px 12px; }
+        .date-field { position:absolute; right:12px; font-size:13px; }
+        
+        /* Mobile reference bar */
+        @media screen and (max-width: 768px) {
+            .reference-bar { flex-direction:column; }
+            .ref-left { width:100%; border-right:none; border-bottom:1px solid #000; padding:4px; font-size:11px; }
+            .ref-left input { width:60px; font-size:11px; }
+            .ref-right { margin-left:0; padding:4px; font-size:11px; flex-direction:column; align-items:flex-start; }
+            .ref-number { font-size:12px; padding:3px 8px; margin-bottom:4px; }
+            .date-field { position:static; font-size:11px; }
+        }
+
+        /* ---------- CLIENT SECTION ---------- */
+        .client-section { display:flex; border-bottom:2px solid #000; margin-top:6px; }
+        .client-left { border-right:2px solid #000; padding:10px; width:50%; font-size:12px; }
+        .client-right { padding:10px; width:50%; font-size:12px; }
+        .client-name { font-weight:bold; font-size:16px; margin-bottom:4px; }
+        .client-address { font-size:12px; line-height:1.4; }
+        .info-row { margin:4px 0; }
+        
+        /* Mobile client section */
+        @media screen and (max-width: 768px) {
+            .client-section { flex-direction:column; margin-top:0; }
+            .client-left { width:100%; border-right:none; border-bottom:1px solid #000; padding:5px; font-size:10px; }
+            .client-right { width:100%; padding:5px; font-size:10px; }
+            .client-name { font-size:12px; }
+            .client-address { font-size:10px; line-height:1.3; }
+            .info-row { margin:2px 0; }
+        }
+
+        /* ---------- ITEMS TABLE (table font size kept same) ---------- */
+        .items-table-container { flex:1; overflow:auto; margin-top:8px; }
+        .items-table { width:100%; border-collapse:collapse; font-size:12px; }
+        .items-table th, .items-table td { border:1px solid #000; padding:4px; font-size:12px; text-align:center; vertical-align:middle; }
+        .items-table th { font-weight:bold; background:#f9f9f9; }
+        .items-table .header-row-1 th { border-bottom:none; padding:3px; }
+        .items-table .header-row-2 th { border-top:none; font-size:11px; padding:3px; }
+
+        /* horizontal line after header */
+        .thead-sep td { border: none; padding:0; }
+        .thead-sep .sep { display:block; height:0; border-bottom:2px solid #000; }
+
+        .items-table tbody tr { height:25px; }
+        .items-table td { padding:2px; }
+
+        .col-sno { width:4%; }
+        .col-jobno { width:10%; }
+        .col-wt { width:7%; }
+        .col-description { width:30%; text-align:left; }
+        .col-qty { width:7%; }
+        .col-rate-rs { width:9%; }
+        .col-rate-p { width:5%; }
+        .col-amount-rs { width:9%; }
+        .col-amount-p { width:5%; }
+
+        .total-row td { height:auto; font-weight:bold; background:#f9f9f9; }
+        
+        /* Mobile table adjustments */
+        @media screen and (max-width: 768px) {
+            .items-table-container { margin-top:4px; overflow-x:auto; }
+            .items-table { font-size:9px; }
+            .items-table th, .items-table td { padding:2px; font-size:9px; }
+            .items-table .header-row-2 th { font-size:8px; }
+            .items-table tbody tr { height:20px; }
+            textarea { height:18px !important; font-size:8px !important; }
+        }
+
+        /* ---------- FOOTER / RUPEES IN WORDS (15px) ---------- */
+        .footer-section { border-top:2px solid #000; padding:10px; font-size:12px; margin-top:8px; }
+        .rupees-row { margin-bottom:20px; font-size:15px; display:flex; align-items:center; gap:8px; }
+        .rupees-row label { font-weight:bold; font-size:15px; min-width:80px; }
+
+        #rupeesInWords {
+            width:85%;
+            font-size:15px;
+            padding:6px;
+            border: none;
+            border-bottom:2px solid #000;
+            background: transparent;
+            outline: none;
+            line-height:1.4;
+        }
+
+        .signature-row { display:flex; justify-content:space-between; align-items:flex-end; min-height:80px; }
+        .signature-right { text-align:right; }
+        .signature-space { min-height:40px; margin-bottom:5px; }
+        
+        /* Mobile footer */
+        @media screen and (max-width: 768px) {
+            .footer-section { padding:5px; font-size:10px; margin-top:4px; }
+            .rupees-row { margin-bottom:10px; font-size:10px; flex-direction:column; align-items:flex-start; gap:2px; }
+            .rupees-row label { font-size:10px; min-width:auto; }
+            #rupeesInWords { width:100%; font-size:10px; padding:3px; }
+            .signature-row { min-height:40px; font-size:9px; }
+            .signature-space { min-height:20px; }
+        }
+
+        input[type="text"], input[type="date"], input[type="number"], textarea {
+            width:100%; border:none; background:transparent; font-family:Arial, sans-serif; font-size:12px; padding:2px; outline:none; text-align:center;
+        }
+        textarea { resize:none; height:20px; text-align:left; font-size:10px; }
+        input[type="text"]:focus, input[type="date"]:focus, input[type="number"]:focus, textarea:focus { background-color:#fffacd; }
+        
+        /* Mobile input adjustments */
+        @media screen and (max-width: 768px) {
+            input[type="text"], input[type="date"], input[type="number"] { font-size:9px; padding:1px; }
+            textarea { font-size:8px; height:18px; }
+        }
+
+        .print-button { position:fixed; top:20px; right:20px; padding:10px 20px; background:#4CAF50; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:14px; z-index:1000; }
+        .add-row-button { position:fixed; top:70px; right:20px; padding:10px 20px; background:#2196F3; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:14px; z-index:1000; }
+        .remove-last-button { position:fixed; top:120px; right:20px; padding:10px 20px; background:#f44336; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:14px; z-index:1000; }
+        .download-html-button { position:fixed; top:170px; right:20px; padding:10px 20px; background:#9C27B0; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:14px; z-index:1000; }
+
+        .add-row-button:disabled { background:#cccccc; cursor:not-allowed; }
+
+        .auto-field { background:#f0f0f0; }
+        
+        /* Mobile button adjustments */
+        @media screen and (max-width: 768px) {
+            .print-button, .add-row-button, .remove-last-button, .download-html-button { 
+                padding:6px 10px; 
+                font-size:10px; 
+                right:5px;
+            }
+            .print-button { top:5px; }
+            .add-row-button { top:40px; }
+            .remove-last-button { top:75px; }
+            .download-html-button { top:110px; }
+        }
+
+        @media print {
+            body { background:#fff; padding:0; margin:0; }
+            .invoice-container { box-shadow:none; width:210mm; min-height:297mm; padding:10mm; }
+            .invoice-box { min-height:calc(297mm - 20mm); }
+            .print-button, .add-row-button, .remove-last-button, .download-html-button { display:none; }
+            input[type="text"], input[type="date"], input[type="number"], textarea { border:none !important; }
+            
+            /* Hide date picker dropdown icon in print */
+            input[type="date"]::-webkit-calendar-picker-indicator { display: none !important; }
+            input[type="date"]::-webkit-inner-spin-button { display: none !important; }
+            
+            .items-table tbody tr { border:none !important; }
+            .items-table td { border-left:1px solid #000 !important; border-right:1px solid #000 !important; border-top:none !important; border-bottom:none !important; }
+            .items-table td:first-child { border-left:1px solid #000 !important; }
+            .items-table td:last-child { border-right:1px solid #000 !important; }
+            .items-table .total-row td { border-top:1px solid #000 !important; border-bottom:1px solid #000 !important; }
+
+            #rupeesInWords {
+                border-bottom:2px solid #000 !important;
+            }
+
+            @page { size:A4; margin:0; }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button" id="printBtn" onclick="printWithFilename()">Print Invoice</button>
+    <button class="add-row-button" id="addRowBtn" onclick="addRowManually()">+ Add Row</button>
+    <button class="remove-last-button" id="removeLastBtn" onclick="removeLastRow()">- Remove Last</button>
+
+    <div class="invoice-container">
+        <div class="invoice-box">
+            <!-- Header Section -->
+            <div class="header">
+                <div class="logo-line">
+                    <div class="logo">SBEW</div>
+                    <div class="invoice-title-section">
+                        <div class="invoice-title">INVOICE / DELIVERY CHALLAN</div>
+                        <div class="party-note">Party's Material Processed & returned, Labour Charges only</div>
+                    </div>
+                    <div style="width:60px;"></div>
+                </div>
+                <div class="company-name">SHRI BALAJI ENGINEERING WORKS</div>
+                <div class="company-address">#12, Sir C.V. Raman Street, Ambal Nagar, Poonamallee, Chennai-56. Cell: 9840332714</div>
+            </div>
+
+            <!-- Reference Bar -->
+            <div class="reference-bar">
+                <div class="ref-left">
+                    No. <input id="noFiledInput" type="text" style="width:80px; display:inline-block; font-weight:bold;">
+                </div>
+                <div class="ref-right">
+                    <span class="ref-number">S/C No. : 18337</span>
+                    <span class="date-field">Date: <input type="date" id="mainDate" style="width:110px; display:inline-block;" onchange="formatDateInput(this)"></span>
+                </div>
+            </div>
+
+            <!-- Client Section -->
+            <div class="client-section">
+                <div class="client-left">
+                    <div>To : </div>
+                    <div class="client-name">ADDISON & CO. LTD.,</div>
+                    <div class="client-address">
+                        F65B, "SIPCOT" Industrial Park,<br/> Irungattukottai, Sriperumpudur Taluk,<br/> Kanchipuram Dist. Pincode - 602 105.
+                    </div>
+                </div>
+                <div class="client-right">
+                    <div class="info-row">Your Ref.: W.O. No.: <input id="woInput" type="text" style="width:180px; border-bottom:1px dotted #999;"></div>
+                    <div class="info-row">Date: <input type="date" id="clientDate" style="width:150px; border-bottom:1px dotted #999;" onchange="formatDateInput(this)"></div>
+                    <div class="info-row">Excise Challan No.: <input type="text" style="width:120px; border-bottom:1px dotted #999;"></div>
+                    <div class="info-row">No. of Vees: <input type="text" style="width:80px; border-bottom:1px dotted #999;"></div>
+                    <div class="info-row">
+                        <label><input type="checkbox" id="turningCheck"> TURNING</label> &nbsp;&nbsp;
+                        <label><input type="checkbox" id="grindingCheck"> GRINDING</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <div class="items-table-container">
+                <table class="items-table" aria-label="items">
+                    <thead>
+                        <tr class="header-row-1">
+                            <th rowspan="2" class="col-sno">S.No</th>
+                            <th rowspan="2" class="col-jobno">Job No</th>
+                            <th rowspan="2" class="col-wt">Wt.</th>
+                            <th rowspan="2" class="col-description">Description</th>
+                            <th rowspan="2" class="col-qty">Qty.</th>
+                            <th colspan="2">Rate (each) Rs.</th>
+                            <th colspan="2">Amount Rs.</th>
+                        </tr>
+                        <tr class="header-row-2">
+                            <th class="col-rate-rs">Rs.</th>
+                            <th class="col-rate-p">P.</th>
+                            <th class="col-amount-rs">Rs.</th>
+                            <th class="col-amount-p">P.</th>
+                        </tr>
+
+                        <!-- separator row - horizontal line after header -->
+                        <tr class="thead-sep">
+                            <td colspan="9"><span class="sep"></span></td>
+                        </tr>
+                    </thead>
+
+                    <tbody id="itemsTableBody">
+                        <!-- rows inserted by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Section -->
+            <div class="footer-section">
+                <div class="rupees-row">
+                    <label>Rupees:</label>
+                    <input type="text" id="rupeesInWords" readonly class="auto-field" placeholder="Amount in words">
+                </div>
+                <div class="signature-row">
+                    <div>E.& O.E.</div>
+                    <div class="signature-right">
+                        <div class="signature-space"></div>
+                        <div>For SHRI BALAJI ENGINEERING WORKS</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let rowCount = 1;
+
+    function initializeTable() {
+        const tbody = document.getElementById('itemsTableBody');
+        tbody.innerHTML = '';
+        addRow();
+        addTotalRow();
+        updateAddRowButton();
+        updateRemoveLastButton();
+    }
+
+    function addRow() {
+        if (rowCount > 15) return;
+
+        const tbody = document.getElementById('itemsTableBody');
+        const totalRow = tbody.querySelector('.total-row');
+
+        const row = document.createElement('tr');
+        row.className = 'data-row';
+        row.innerHTML = `
+            <td><input type="text" readonly class="auto-field row-no" value="${rowCount}"></td>
+            <td><input type="text" maxlength="10" placeholder="10 digits" class="job-no"></td>
+            <td><input type="text" class="wt"></td>
+            <td><textarea class="description" maxlength="500" placeholder="Max 500 characters"></textarea></td>
+            <td><input type="number" min="0" max="99999" class="qty" oninput="calculateRow(this)"></td>
+            <td><input type="number" step="1" min="0" max="99999" class="rate-rs" oninput="calculateRow(this)"></td>
+            <td><input type="number" step="1" min="0" max="99" class="rate-p" oninput="calculateRow(this)"></td>
+            <td><input type="text" readonly class="auto-field amount-rs"></td>
+            <td><input type="text" readonly class="auto-field amount-p"></td>
+        `;
+
+        if (totalRow) {
+            tbody.insertBefore(row, totalRow);
+        } else {
+            tbody.appendChild(row);
+        }
+
+        rowCount++;
+        updateAddRowButton();
+        updateRemoveLastButton();
+    }
+
+    function addRowManually() { addRow(); }
+
+    function removeLastRow() {
+        const rows = document.querySelectorAll('.data-row');
+        if (rows.length <= 1) {
+            alert('Cannot remove the last row!');
+            return;
+        }
+        const last = rows[rows.length - 1];
+        last.remove();
+        renumberRows();
+        calculateTotals();
+        updateAddRowButton();
+        updateRemoveLastButton();
+    }
+
+    function renumberRows() {
+        const rows = document.querySelectorAll('.data-row');
+        rows.forEach((row, index) => {
+            const input = row.querySelector('.row-no');
+            if (input) input.value = index + 1;
+        });
+        rowCount = rows.length + 1;
+    }
+
+    function updateAddRowButton() {
+        const btn = document.getElementById('addRowBtn');
+        if (rowCount > 15) {
+            btn.disabled = true;
+            btn.textContent = 'Max Rows (15)';
+        } else {
+            btn.disabled = false;
+            btn.textContent = `+ Add Row (${rowCount - 1}/15)`;
+        }
+    }
+
+    function updateRemoveLastButton() {
+        const btn = document.getElementById('removeLastBtn');
+        const rows = document.querySelectorAll('.data-row');
+        if (rows.length <= 1) {
+            btn.disabled = true;
+            btn.textContent = '- Remove Last';
+        } else {
+            btn.disabled = false;
+            btn.textContent = `- Remove Last (${rows.length - 1} rows)`;
+        }
+    }
+
+    function addTotalRow() {
+        const tbody = document.getElementById('itemsTableBody');
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'total-row';
+        totalRow.innerHTML = `
+            <td colspan="4" style="text-align:right; font-weight:bold;">TOTAL</td>
+            <td><input type="text" readonly class="auto-field" id="totalQty"></td>
+            <td colspan="2"></td>
+            <td><input type="text" readonly class="auto-field" id="totalAmountRs"></td>
+            <td><input type="text" readonly class="auto-field" id="totalAmountP"></td>
+        `;
+        tbody.appendChild(totalRow);
+    }
+
+    function calculateRow(el) {
+        const row = el.closest('tr');
+        const qty = parseFloat(row.querySelector('.qty').value) || 0;
+        const rateRs = parseFloat(row.querySelector('.rate-rs').value) || 0;
+        const rateP = parseInt(row.querySelector('.rate-p').value) || 0;
+
+        const totalRate = rateRs + (rateP / 100);
+        const totalAmount = qty * totalRate;
+
+        const amountRs = Math.floor(totalAmount);
+        const amountP = Math.round((totalAmount - amountRs) * 100);
+
+        row.querySelector('.amount-rs').value = (isNaN(amountRs) ? '' : String(amountRs));
+        row.querySelector('.amount-p').value = isNaN(amountP) ? '' : String(amountP).padStart(2, '0');
+
+        calculateTotals();
+    }
+
+    function calculateTotals() {
+        const rows = document.querySelectorAll('.data-row');
+        let totalQty = 0;
+        let totalAmountRs = 0;
+        let totalAmountP = 0;
+
+        rows.forEach(row => {
+            const qty = parseFloat(row.querySelector('.qty').value) || 0;
+            const amountRs = parseInt(row.querySelector('.amount-rs').value) || 0;
+            const amountP = parseInt(row.querySelector('.amount-p').value) || 0;
+
+            totalQty += qty;
+            totalAmountRs += amountRs;
+            totalAmountP += amountP;
+        });
+
+        const pOverflow = Math.floor(totalAmountP / 100);
+        totalAmountRs += pOverflow;
+        totalAmountP = totalAmountP % 100;
+
+        document.getElementById('totalQty').value = totalQty ? String(totalQty) : '';
+        document.getElementById('totalAmountRs').value = (isNaN(totalAmountRs) ? '' : String(totalAmountRs));
+        document.getElementById('totalAmountP').value = isNaN(totalAmountP) ? '' : String(totalAmountP).padStart(2, '0');
+
+        updateRupeesInWords(totalAmountRs, totalAmountP);
+    }
+
+    function updateRupeesInWords(rupees, paise) {
+        const amt = (parseInt(rupees) || 0) + ((parseInt(paise) || 0) / 100);
+        if (!amt || amt === 0) {
+            document.getElementById('rupeesInWords').value = '';
+            return;
+        }
+
+        const words = numberToWords(Math.floor(rupees || 0));
+        const p = Math.round(paise || 0);
+
+        let result = words || 'Zero';
+        if (p > 0) {
+            result += ' and ' + numberToWords(p) + ' Paise';
+        }
+        result += ' Only';
+
+        document.getElementById('rupeesInWords').value = result;
+    }
+
+    function numberToWords(num) {
+        if (num === 0) return 'Zero';
+        const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+        const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+        function convertLessThanThousand(n) {
+            if (n === 0) return '';
+            if (n < 10) return ones[n];
+            if (n < 20) return teens[n - 10];
+            if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+            return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convertLessThanThousand(n % 100) : '');
+        }
+
+        if (num < 1000) return convertLessThanThousand(num);
+        if (num < 100000) {
+            return convertLessThanThousand(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 !== 0 ? ' ' + convertLessThanThousand(num % 1000) : '');
+        }
+        if (num < 10000000) {
+            return convertLessThanThousand(Math.floor(num / 100000)) + ' Lakh' + (num % 100000 !== 0 ? ' ' + numberToWords(num % 100000) : '');
+        }
+        return convertLessThanThousand(Math.floor(num / 10000000)) + ' Crore' + (num % 10000000 !== 0 ? ' ' + numberToWords(num % 10000000) : '');
+    }
+
+    function padDateToISO(dateString) {
+        if (!dateString) return '';
+        const d = new Date(dateString);
+        if (isNaN(d.getTime())) return '';
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function formatDateInput(input) {
+        // This function can be used for additional date formatting if needed
+        // The display format is handled by the browser's locale
+    }
+
+    function formatDateForDisplay(dateString) {
+        if (!dateString) return '';
+        const d = new Date(dateString);
+        if (isNaN(d.getTime())) return '';
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+    }
+
+    function getFilenameParts() {
+        const noFiled = (document.getElementById('noFiledInput').value || '').trim();
+        const wo = (document.getElementById('woInput').value || '').trim();
+        const clientDateVal = document.getElementById('clientDate').value;
+        const mainDateVal = document.getElementById('mainDate').value;
+        let dateVal = padDateToISO(mainDateVal) || padDateToISO(clientDateVal);
+
+        if (!dateVal) {
+            const today = new Date();
+            dateVal = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        }
+
+        return {
+            noFiled,
+            wo,
+            dateVal
+        };
+    }
+
+    function buildFilename() {
+        const parts = getFilenameParts();
+        function sanitize(s) {
+            return (s || '').replace(/[\\\/:*?"<>|]/g, '').replace(/\s+/g,'').trim();
+        }
+        const pNo = sanitize(parts.noFiled);
+        const pWo = sanitize(parts.wo);
+        const pDate = sanitize(parts.dateVal);
+        const filename = `${pNo || ''}_${pWo || ''}_${pDate || ''}_SBER`;
+        return filename;
+    }
+
+    function setDocumentTitleForPrint() {
+        const filename = buildFilename();
+        if (filename && filename !== '') {
+            document.title = filename;
+        }
+        return filename;
+    }
+
+    function printWithFilename() {
+        setDocumentTitleForPrint();
+        setTimeout(() => window.print(), 100);
+    }
+
+    function showFilenamePreviewInConsole() {
+        console.log('Invoice filename preview:', buildFilename());
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeTable();
+        showFilenamePreviewInConsole();
+
+        // Set date inputs to display in DD/MM/YYYY format visually
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(input => {
+            // Listen for changes to update display
+            input.addEventListener('blur', function() {
+                if (this.value) {
+                    // Store the ISO value but we'll display DD/MM/YYYY in print
+                    console.log('Date selected:', formatDateForDisplay(this.value));
+                }
+            });
+        });
+
+        ['noFiledInput','woInput','clientDate','mainDate'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('input', () => {
+                const preview = buildFilename();
+                document.getElementById('printBtn').title = preview;
+                showFilenamePreviewInConsole();
+            });
+        });
+    });
+
+    window.addEventListener('load', calculateTotals);
+</script>
+</body>
+</html>
