@@ -163,10 +163,17 @@
         textarea { resize:none; height:20px; text-align:left; font-size:10px; }
         input[type="text"]:focus, input[type="date"]:focus, input[type="number"]:focus, textarea:focus { background-color:#fffacd; }
         
+        /* Date display spans - hidden by default, shown in print */
+        .date-display {
+            display: none;
+            font-size: 12px;
+        }
+        
         /* Mobile input adjustments */
         @media screen and (max-width: 768px) {
             input[type="text"], input[type="date"], input[type="number"] { font-size:9px; padding:1px; }
             textarea { font-size:8px; height:18px; }
+            .date-display { font-size: 9px; }
         }
 
         .print-button { position:fixed; top:20px; right:20px; padding:10px 20px; background:#4CAF50; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:14px; z-index:1000; }
@@ -196,11 +203,15 @@
             .invoice-container { box-shadow:none; width:210mm; min-height:297mm; padding:10mm; }
             .invoice-box { min-height:calc(297mm - 20mm); }
             .print-button, .add-row-button, .remove-last-button, .download-html-button { display:none; }
-            input[type="text"], input[type="date"], input[type="number"], textarea { border:none !important; }
+            input[type="text"], input[type="number"], textarea { border:none !important; }
             
-            /* Hide date picker dropdown icon in print */
-            input[type="date"]::-webkit-calendar-picker-indicator { display: none !important; }
-            input[type="date"]::-webkit-inner-spin-button { display: none !important; }
+            /* Hide actual date inputs and show formatted text spans instead */
+            input[type="date"] { 
+                display: none !important;
+            }
+            .date-display {
+                display: inline !important;
+            }
             
             .items-table tbody tr { border:none !important; }
             .items-table td { border-left:1px solid #000 !important; border-right:1px solid #000 !important; border-top:none !important; border-bottom:none !important; }
@@ -244,7 +255,11 @@
                 </div>
                 <div class="ref-right">
                     <span class="ref-number">S/C No. : 18337</span>
-                    <span class="date-field">Date: <input type="date" id="mainDate" style="width:110px; display:inline-block;" onchange="formatDateInput(this)"></span>
+                    <span class="date-field">
+                        Date: 
+                        <input type="date" id="mainDate" style="width:110px; display:inline-block;" onchange="updateDateDisplay('mainDate', 'mainDateDisplay')">
+                        <span class="date-display" id="mainDateDisplay"></span>
+                    </span>
                 </div>
             </div>
 
@@ -259,7 +274,11 @@
                 </div>
                 <div class="client-right">
                     <div class="info-row">Your Ref.: W.O. No.: <input id="woInput" type="text" style="width:180px; border-bottom:1px dotted #999;"></div>
-                    <div class="info-row">Date: <input type="date" id="clientDate" style="width:150px; border-bottom:1px dotted #999;" onchange="formatDateInput(this)"></div>
+                    <div class="info-row">
+                        Date: 
+                        <input type="date" id="clientDate" style="width:150px; border-bottom:1px dotted #999;" onchange="updateDateDisplay('clientDate', 'clientDateDisplay')">
+                        <span class="date-display" id="clientDateDisplay"></span>
+                    </div>
                     <div class="info-row">Excise Challan No.: <input type="text" style="width:120px; border-bottom:1px dotted #999;"></div>
                     <div class="info-row">No. of Vees: <input type="text" style="width:80px; border-bottom:1px dotted #999;"></div>
                     <div class="info-row">
@@ -521,11 +540,6 @@
         return `${yyyy}-${mm}-${dd}`;
     }
 
-    function formatDateInput(input) {
-        // This function can be used for additional date formatting if needed
-        // The display format is handled by the browser's locale
-    }
-
     function formatDateForDisplay(dateString) {
         if (!dateString) return '';
         const d = new Date(dateString);
@@ -534,6 +548,14 @@
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const yyyy = d.getFullYear();
         return `${dd}/${mm}/${yyyy}`;
+    }
+
+    function updateDateDisplay(inputId, displayId) {
+        const input = document.getElementById(inputId);
+        const display = document.getElementById(displayId);
+        if (input && display) {
+            display.textContent = formatDateForDisplay(input.value);
+        }
     }
 
     function getFilenameParts() {
@@ -588,22 +610,19 @@
         initializeTable();
         showFilenamePreviewInConsole();
 
-        // Set date inputs to display in DD/MM/YYYY format visually
-        const dateInputs = document.querySelectorAll('input[type="date"]');
-        dateInputs.forEach(input => {
-            // Listen for changes to update display
-            input.addEventListener('blur', function() {
-                if (this.value) {
-                    // Store the ISO value but we'll display DD/MM/YYYY in print
-                    console.log('Date selected:', formatDateForDisplay(this.value));
-                }
-            });
-        });
+        // Initialize date displays
+        updateDateDisplay('mainDate', 'mainDateDisplay');
+        updateDateDisplay('clientDate', 'clientDateDisplay');
 
         ['noFiledInput','woInput','clientDate','mainDate'].forEach(id => {
             const el = document.getElementById(id);
             if (!el) return;
             el.addEventListener('input', () => {
+                const preview = buildFilename();
+                document.getElementById('printBtn').title = preview;
+                showFilenamePreviewInConsole();
+            });
+            el.addEventListener('change', () => {
                 const preview = buildFilename();
                 document.getElementById('printBtn').title = preview;
                 showFilenamePreviewInConsole();
