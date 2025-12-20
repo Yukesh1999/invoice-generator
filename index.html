@@ -451,8 +451,15 @@
         const totalRate = rateRs + (rateP / 100);
         const totalAmount = qty * totalRate;
 
-        const amountRs = Math.floor(totalAmount);
-        const amountP = Math.round((totalAmount - amountRs) * 100);
+        // Round to nearest rupee
+        let amountRs = Math.floor(totalAmount);
+        let amountP = Math.round((totalAmount - amountRs) * 100);
+
+        // If paise rounds to 100, add 1 to rupees and set paise to 0
+        if (amountP >= 100) {
+            amountRs += 1;
+            amountP = 0;
+        }
 
         row.querySelector('.amount-rs').value = (isNaN(amountRs) ? '' : String(amountRs));
         row.querySelector('.amount-p').value = isNaN(amountP) ? '' : String(amountP).padStart(2, '0');
@@ -599,7 +606,40 @@
 
     function printWithFilename() {
         setDocumentTitleForPrint();
-        setTimeout(() => window.print(), 100);
+        
+        // Try multiple methods for better TV browser compatibility
+        try {
+            // Method 1: Standard window.print()
+            if (window.print) {
+                setTimeout(() => {
+                    try {
+                        window.print();
+                    } catch (e) {
+                        console.error('Print method 1 failed:', e);
+                        tryAlternativePrint();
+                    }
+                }, 100);
+            } else {
+                tryAlternativePrint();
+            }
+        } catch (e) {
+            console.error('Print failed:', e);
+            alert('Print function not supported on this browser. Please try using a different browser or save as PDF.');
+        }
+    }
+    
+    function tryAlternativePrint() {
+        // Method 2: Execute print command directly
+        try {
+            document.execCommand('print', false, null);
+        } catch (e) {
+            console.error('Alternative print method failed:', e);
+            // Method 3: Show alert with instructions
+            alert('Please use your browser\'s menu to print:\n\n' +
+                  '1. Press Menu button on your remote\n' +
+                  '2. Look for "Print" or "Share" option\n' +
+                  '3. Or try keyboard shortcut: Ctrl+P (or Cmd+P on Mac)');
+        }
     }
 
     function showFilenamePreviewInConsole() {
@@ -627,6 +667,14 @@
                 document.getElementById('printBtn').title = preview;
                 showFilenamePreviewInConsole();
             });
+        });
+        
+        // Add keyboard shortcut support for Ctrl+P
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                printWithFilename();
+            }
         });
     });
 
